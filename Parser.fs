@@ -10,7 +10,7 @@ type Parser<'a> = Parser<'a, UserState>
 
 let mayThrow (p: Parser<'a>) : Parser<'a> =
   fun stream ->
-    let state = stream.State        
+    let state = stream.State
     try 
       p stream
     with e -> // catching all exceptions is somewhat dangerous
@@ -39,16 +39,6 @@ let rightParenP : Parser<_> = pchar ')'
 let piP = pstringV "pi" PI
 let eP = pcharV 'e' E
 
-let plusP = pcharV '+' Plus
-let minusP = pcharV '-' Minus
-
-let addP = pcharV '+' Add
-let subP = pcharV '-' Sub
-let mulP = pcharV '*' Mul
-let divP = pcharV '/' Div
-let powP = pcharV '^' Pow
-let modP = pcharV '%' Mod
-
 let sinP   = pstringV "sin" Sin
 let cosP   = pstringV "cos" Cos
 let tanP   = pstringV "tan" Tan
@@ -61,7 +51,8 @@ let roundP = pstringV "round" Round
 
 // --- Expression parsers ---
 
-let expression, expressionRef = createParserForwardedToRef<Expression, UserState>()
+let opp = new OperatorPrecedenceParser<Expression,unit,unit>()
+let expression = opp.ExpressionParser
 
 let numberP =
   floatP
@@ -78,23 +69,6 @@ let parenthesesP =
     (rightParenP .>> spaces)
     (expression .>> spaces)
 
-let unaryP =
-  plusP <|> minusP
-  .>>. expression
-  .>> spaces
-  |>> Unary
-  <?> "unary operator"
-
-let binaryP =
-  expression
-  .>> spaces
-  .>>. choice [ addP; subP; mulP; divP; powP; modP ]
-  .>> spaces
-  .>>. expression
-  .>> spaces
-  |>> (fun ((e1, b), e2) -> Binary (b, e1, e2))
-  <?> "binary expression"
-
 let functionP =
   choice [ sinP; cosP; tanP; log10P; logP; absP; signP; sqrtP; roundP ]
   .>>. parenthesesP
@@ -102,8 +76,17 @@ let functionP =
   |>> Function
   <?> "function"
 
-expressionRef :=
-  spaces
-  >>. choice [ numberP; constantP; parenthesesP; unaryP; binaryP; functionP ]
+opp.TermParser <- choice [ numberP; constantP; functionP; parenthesesP ]
 
-let parse = run expression
+opp.AddOperator(InfixOperator("+", spaces, 1, Associativity.Left, Expression.fromBinary Add))
+opp.AddOperator(InfixOperator("-", spaces, 1, Associativity.Left, Expression.fromBinary Sub))
+opp.AddOperator(InfixOperator("*", spaces, 2, Associativity.Left, Expression.fromBinary Mul))
+opp.AddOperator(InfixOperator("/", spaces, 2, Associativity.Left, Expression.fromBinary Div))
+opp.AddOperator(InfixOperator("^", spaces, 3, Associativity.Right, Expression.fromBinary Pow))
+opp.AddOperator(InfixOperator("%", spaces, 2, Associativity.Left, Expression.fromBinary Mod))
+opp.AddOperator(PrefixOperator("+", spaces, 4, true, Expression.fromUnary Plus))
+opp.AddOperator(PrefixOperator("-", spaces, 4, true, Expression.fromUnary Minus))
+
+let parser = spaces >>. expression .>> eof
+
+let parse = run parser
