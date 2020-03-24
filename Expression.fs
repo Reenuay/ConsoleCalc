@@ -64,6 +64,10 @@ module Expression =
 
   let fromConstant = Constant
 
+  let fromUnary u e = Unary (u, e)
+
+  let fromBinary b e1 e2 = Binary (b, e1, e2)
+
   let rec solve = function
   | Number f           -> f
   | Constant c         -> Constant.toFloat c
