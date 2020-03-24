@@ -7,13 +7,13 @@ type Constant = PI | E
 type Unary = Plus | Minus
 
 type Binary =
-  | Add | Sub 
-  | Mul | Div 
+  | Add | Sub
+  | Mul | Div
   | Mod | Pow
 
 type Function =
-  | Sin   | Cos  | Tan 
-  | Log10 | Log  | Abs 
+  | Sin   | Cos  | Tan
+  | Log10 | Log  | Abs
   | Sign  | Sqrt | Round
 
 type Expression =
@@ -60,6 +60,10 @@ module Function =
 
 [<RequireQualifiedAccess>]
 module Expression =
+  let fromFloat = Number
+
+  let fromConstant = Constant
+
   let rec solve = function
   | Number f           -> f
   | Constant c         -> Constant.toFloat c
