@@ -56,10 +56,12 @@ let expression = opp.ExpressionParser
 
 let numberP =
   floatP
+  .>> spaces
   |>> Expression.fromFloat
 
 let constantP =
   piP <|> eP
+  .>> spaces
   |>> Expression.fromConstant
   <?> "constant"
 
@@ -67,12 +69,12 @@ let parenthesesP =
   between
     (leftParenP .>> spaces)
     (rightParenP .>> spaces)
-    (expression .>> spaces)
+    expression
+  .>> spaces
 
 let functionP =
   choice [ sinP; cosP; tanP; log10P; logP; absP; signP; sqrtP; roundP ]
   .>>. parenthesesP
-  .>> spaces
   |>> Function
   <?> "function"
 
