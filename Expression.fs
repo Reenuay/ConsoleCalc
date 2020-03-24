@@ -1,4 +1,4 @@
-module ConsoleCalc
+namespace ConsoleCalc
 
 open System
 
